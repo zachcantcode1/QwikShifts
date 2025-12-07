@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { authMiddleware } from './middleware'
-import { User } from '@qwikshifts/core'
+import type { User } from '@qwikshifts/core'
 import { initDb } from './db'
 import areas from './routes/areas'
 import employees from './routes/employees'
