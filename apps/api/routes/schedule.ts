@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { DEMO_SHIFTS, DEMO_ASSIGNMENTS, DEMO_EMPLOYEES } from '../data';
+import db from '../db';
 import type { ShiftWithAssignment, User } from '@qwikshifts/core';
 
 type Env = {
@@ -11,25 +11,43 @@ type Env = {
 const app = new Hono<Env>();
 
 app.get('/week', (c) => {
+  const user = c.get('user');
   const from = c.req.query('from');
   const to = c.req.query('to');
   const locationId = c.req.query('locationId');
 
-  let shifts = DEMO_SHIFTS;
+  let query = "SELECT * FROM shifts WHERE org_id = ?";
+  const params: any[] = [user.orgId];
 
   if (locationId) {
-    shifts = shifts.filter((s) => s.locationId === locationId);
+    query += " AND location_id = ?";
+    params.push(locationId);
   }
 
   if (from && to) {
-    shifts = shifts.filter((s) => s.date >= from && s.date <= to);
+    query += " AND date >= ? AND date <= ?";
+    params.push(from, to);
   }
 
+  const shifts = db.query(query).all(...params) as any[];
+
   const shiftsWithAssignments: ShiftWithAssignment[] = shifts.map((shift) => {
-    const assignment = DEMO_ASSIGNMENTS.find((a) => a.shiftId === shift.id);
+    const assignment = db.query("SELECT * FROM assignments WHERE shift_id = ?").get(shift.id) as any;
+
     return {
-      ...shift,
-      assignment: assignment || null,
+      id: shift.id,
+      areaId: shift.area_id,
+      date: shift.date,
+      startTime: shift.start_time,
+      endTime: shift.end_time,
+      orgId: shift.org_id,
+      locationId: shift.location_id,
+      assignment: assignment ? {
+        id: assignment.id,
+        shiftId: assignment.shift_id,
+        employeeId: assignment.employee_id,
+        roleId: assignment.role_id,
+      } : null,
     };
   });
 
@@ -38,109 +56,130 @@ app.get('/week', (c) => {
 
 app.get('/my', (c) => {
   const user = c.get('user');
+  const from = c.req.query('from');
+  const to = c.req.query('to');
+
   // Find all employee profiles for this user
-  const employees = DEMO_EMPLOYEES.filter((e) => e.userId === user.id);
+  const employees = db.query("SELECT * FROM employees WHERE user_id = ?").all(user.id) as any[];
 
   if (employees.length === 0) {
     return c.json([]);
   }
 
   const employeeIds = employees.map(e => e.id);
+  const placeholders = employeeIds.map(() => '?').join(',');
 
-  const from = c.req.query('from');
-  const to = c.req.query('to');
-
-  // Find assignments for these employees
-  const myAssignments = DEMO_ASSIGNMENTS.filter((a) => employeeIds.includes(a.employeeId));
-  const myShiftIds = myAssignments.map((a) => a.shiftId);
-
-  let shifts = DEMO_SHIFTS.filter((s) => myShiftIds.includes(s.id));
+  // Find shifts assigned to these employees
+  let query = `
+    SELECT s.*, a.id as assignment_id, a.employee_id, a.role_id 
+    FROM shifts s
+    JOIN assignments a ON s.id = a.shift_id
+    WHERE a.employee_id IN (${placeholders})
+  `;
+  const params: any[] = [...employeeIds];
 
   if (from && to) {
-    shifts = shifts.filter((s) => s.date >= from && s.date <= to);
+    query += " AND s.date >= ? AND s.date <= ?";
+    params.push(from, to);
   }
 
-  const shiftsWithAssignments: ShiftWithAssignment[] = shifts.map((shift) => {
-    const assignment = DEMO_ASSIGNMENTS.find((a) => a.shiftId === shift.id);
-    return {
-      ...shift,
-      assignment: assignment || null,
-    };
-  });
+  const results = db.query(query).all(...params) as any[];
+
+  const shiftsWithAssignments: ShiftWithAssignment[] = results.map((row) => ({
+    id: row.id,
+    areaId: row.area_id,
+    date: row.date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    orgId: row.org_id,
+    locationId: row.location_id,
+    assignment: {
+      id: row.assignment_id,
+      shiftId: row.id,
+      employeeId: row.employee_id,
+      roleId: row.role_id,
+    },
+  }));
 
   return c.json(shiftsWithAssignments);
 });
 
 app.post('/shift', async (c) => {
+  const user = c.get('user');
   const body = await c.req.json();
-  const { areaId, date, startTime, endTime, employeeId, roleId, orgId, locationId } = body;
+  const { areaId, date, startTime, endTime, employeeId, roleId, locationId } = body;
 
   const newShiftId = `shift-${Date.now()}`;
-  const newShift = {
+  const orgId = user.orgId;
+  const locId = locationId || null;
+
+  if (!locId) {
+    return c.json({ error: 'Location ID is required' }, 400);
+  }
+
+  db.query(`
+    INSERT INTO shifts (id, area_id, date, start_time, end_time, org_id, location_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(newShiftId, areaId, date, startTime, endTime, orgId, locId);
+
+  if (employeeId) {
+    const newAssignmentId = `assign-${Date.now()}`;
+    db.query(`
+      INSERT INTO assignments (id, shift_id, employee_id, role_id)
+      VALUES (?, ?, ?, ?)
+    `).run(newAssignmentId, newShiftId, employeeId, roleId || null);
+  }
+
+  return c.json({
     id: newShiftId,
     areaId,
     date,
     startTime,
     endTime,
-    orgId: orgId || 'org-1', // Default to demo org
-    locationId: locationId || 'loc-1', // Default to demo location
-  };
-
-  DEMO_SHIFTS.push(newShift);
-
-  if (employeeId) {
-    const newAssignment = {
-      id: `assign-${Date.now()}`,
-      shiftId: newShiftId,
-      employeeId,
-      roleId,
-    };
-    DEMO_ASSIGNMENTS.push(newAssignment);
-  }
-
-  return c.json(newShift);
+    orgId,
+    locationId: locId,
+  });
 });
 
 app.put('/:id', async (c) => {
+  const user = c.get('user');
   const id = c.req.param('id');
   const body = await c.req.json();
   const { startTime, endTime } = body;
 
-  const shiftIndex = DEMO_SHIFTS.findIndex((s) => s.id === id);
-  if (shiftIndex === -1) {
+  const result = db.query(`
+    UPDATE shifts SET start_time = ?, end_time = ? 
+    WHERE id = ? AND org_id = ?
+  `).run(startTime, endTime, id, user.orgId);
+
+  if (result.changes === 0) {
     return c.json({ error: 'Shift not found' }, 404);
   }
 
-  DEMO_SHIFTS[shiftIndex] = {
-    ...DEMO_SHIFTS[shiftIndex],
-    startTime,
-    endTime,
-  };
+  const updated = db.query("SELECT * FROM shifts WHERE id = ?").get(id) as any;
 
-  return c.json(DEMO_SHIFTS[shiftIndex]);
+  return c.json({
+    id: updated.id,
+    areaId: updated.area_id,
+    date: updated.date,
+    startTime: updated.start_time,
+    endTime: updated.end_time,
+    orgId: updated.org_id,
+    locationId: updated.location_id,
+  });
 });
 
 app.delete('/:id', async (c) => {
+  const user = c.get('user');
   const id = c.req.param('id');
-  const shiftIndex = DEMO_SHIFTS.findIndex((s) => s.id === id);
 
-  if (shiftIndex === -1) {
+  const result = db.query("DELETE FROM shifts WHERE id = ? AND org_id = ?").run(id, user.orgId);
+
+  if (result.changes === 0) {
     return c.json({ error: 'Shift not found' }, 404);
   }
 
-  // Remove the shift
-  DEMO_SHIFTS.splice(shiftIndex, 1);
-
-  // Remove associated assignments
-  // In a real DB this would be a cascade delete or separate query
-  // Here we just filter them out or splice if we want to be precise
-  // Since DEMO_ASSIGNMENTS is an array, let's just remove all matching
-  let i = DEMO_ASSIGNMENTS.length;
-  while (i--) {
-    if (DEMO_ASSIGNMENTS[i].shiftId === id) {
-      DEMO_ASSIGNMENTS.splice(i, 1);
-    }
-  }
+  // Assignments will be cascade deleted due to FK constraint
 
   return c.json({ success: true });
 });

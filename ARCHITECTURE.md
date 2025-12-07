@@ -59,7 +59,7 @@ The backend is a lightweight Hono server that handles API requests and database 
 
 ### Authentication (`middleware.ts`)
 -   Currently uses a simplified "Demo Auth" mechanism.
--   The frontend sends a custom header `x-demo-user-id`.
+-   The frontend sends a custom header `x-user-id`.
 -   Middleware validates this ID against the `users` table.
 -   If valid, the user context is attached to the request.
 

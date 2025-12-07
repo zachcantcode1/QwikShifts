@@ -9,8 +9,8 @@ type Env = {
 };
 
 export const authMiddleware = createMiddleware<Env>(async (c, next) => {
-  const userId = c.req.header('x-demo-user-id');
-  
+  const userId = c.req.header('x-user-id');
+
   if (!userId) {
     return c.json({ error: 'Unauthorized' }, 401);
   }

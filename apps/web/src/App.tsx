@@ -27,13 +27,13 @@ function AppContent() {
       <div className="flex flex-col items-center justify-center h-screen gap-4 bg-background text-foreground">
         <h1 className="text-2xl font-bold">QwikShifts</h1>
         <p className="text-muted-foreground">Session expired or not logged in.</p>
-        <button 
+        <button
           onClick={() => {
-             const id = prompt("Enter User ID");
-             if(id) {
-               localStorage.setItem('demo-user-id', id);
-               window.location.reload();
-             }
+            const id = prompt("Enter User ID");
+            if (id) {
+              localStorage.setItem('qwikshifts-user-id', id);
+              window.location.reload();
+            }
           }}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
         >

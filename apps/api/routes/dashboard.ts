@@ -1,13 +1,7 @@
 import { Hono } from 'hono';
 import db from '../db';
 import type { User } from '@qwikshifts/core';
-import { 
-  DEMO_EMPLOYEES, 
-  DEMO_ASSIGNMENTS, 
-  DEMO_SHIFTS,
-  DEMO_USERS
-} from '../data';
-import { startOfWeek, endOfWeek, isWithinInterval, parseISO, differenceInHours } from 'date-fns';
+import { startOfWeek, endOfWeek, parseISO, differenceInHours, format } from 'date-fns';
 
 type Env = {
   Variables: {
@@ -19,45 +13,56 @@ const app = new Hono<Env>();
 
 app.get('/stats', (c) => {
   const user = c.get('user');
-  
+
   // 1. Pending Time Off Requests
   const pendingRequests = db.query("SELECT COUNT(*) as count FROM time_off_requests WHERE status = 'pending' AND org_id = ?").get(user.orgId) as any;
-  const pendingTimeOffCount = pendingRequests.count;
+  const pendingTimeOffCount = pendingRequests?.count || 0;
 
   // 2. Overtime Risk
   // Calculate hours for current week for each employee
   const now = new Date();
   const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday start
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+  const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+  const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
 
-  const overtimeRisks = DEMO_EMPLOYEES.map(employee => {
-    const employeeAssignments = DEMO_ASSIGNMENTS.filter(a => a.employeeId === employee.id);
-    
+  // Get all employees with their hour limits
+  const employees = db.query(`
+    SELECT e.*, u.name as user_name, r.value as rule_value
+    FROM employees e
+    JOIN users u ON e.user_id = u.id
+    LEFT JOIN rules r ON e.rule_id = r.id
+    WHERE e.org_id = ?
+  `).all(user.orgId) as any[];
+
+  const overtimeRisks = employees.map(employee => {
+    // Get all shifts assigned to this employee in the current week
+    const assignments = db.query(`
+      SELECT s.* FROM shifts s
+      JOIN assignments a ON s.id = a.shift_id
+      WHERE a.employee_id = ? AND s.date >= ? AND s.date <= ?
+    `).all(employee.id, weekStartStr, weekEndStr) as any[];
+
     let totalHours = 0;
-    
-    employeeAssignments.forEach(assignment => {
-      const shift = DEMO_SHIFTS.find(s => s.id === assignment.shiftId);
-      if (shift) {
-        const shiftDate = parseISO(shift.date);
-        if (isWithinInterval(shiftDate, { start: weekStart, end: weekEnd })) {
-          // Simple duration calculation assuming start/end times are parseable
-          // In a real app, we'd parse the time strings properly
-          const start = parseISO(`${shift.date}T${shift.startTime}`);
-          const end = parseISO(`${shift.date}T${shift.endTime}`);
-          const hours = differenceInHours(end, start);
-          totalHours += hours;
-        }
+
+    assignments.forEach((shift: any) => {
+      try {
+        const start = parseISO(`${shift.date}T${shift.start_time}`);
+        const end = parseISO(`${shift.date}T${shift.end_time}`);
+        const hours = differenceInHours(end, start);
+        totalHours += hours;
+      } catch (e) {
+        // Skip if date parsing fails
       }
     });
 
-    const limit = employee.weeklyHoursLimit || 40;
+    const limit = employee.weekly_hours_limit || employee.rule_value || 40;
     const threshold = limit * 0.9; // 90% of limit
 
     if (totalHours >= threshold) {
-      const user = DEMO_USERS.find(u => u.id === employee.userId);
       return {
         employeeId: employee.id,
-        name: user?.name || 'Unknown',
+        name: employee.user_name || 'Unknown',
         currentHours: totalHours,
         limit: limit
       };
@@ -65,18 +70,20 @@ app.get('/stats', (c) => {
     return null;
   }).filter(Boolean);
 
-  // 3. Upcoming Shifts (Next 48 hours)
-  // For demo purposes, we'll just look at "today" and "tomorrow" based on string comparison or simple date logic
-  // Since demo data might be static, let's just count total shifts in the system for now or use a fixed date range if needed.
-  // Actually, let's just return a summary of "Today's" shifts.
-  
-  const todayStr = now.toISOString().split('T')[0];
-  const todaysShifts = DEMO_SHIFTS.filter(s => s.date === todayStr);
+  // 3. Today's Shifts Stats
+  const todayStr = format(now, 'yyyy-MM-dd');
+
+  const todaysShifts = db.query("SELECT * FROM shifts WHERE org_id = ? AND date = ?").all(user.orgId, todayStr) as any[];
   const totalShiftsToday = todaysShifts.length;
-  
-  const unassignedShiftsToday = todaysShifts.filter(shift => {
-    return !DEMO_ASSIGNMENTS.some(a => a.shiftId === shift.id);
-  }).length;
+
+  // Count unassigned shifts
+  let unassignedShiftsToday = 0;
+  for (const shift of todaysShifts) {
+    const assignment = db.query("SELECT * FROM assignments WHERE shift_id = ?").get(shift.id);
+    if (!assignment) {
+      unassignedShiftsToday++;
+    }
+  }
 
   return c.json({
     pendingTimeOffCount,

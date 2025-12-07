@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { DEMO_ASSIGNMENTS, DEMO_SHIFTS } from '../data';
+import db from '../db';
 import type { ShiftAssignment, User } from '@qwikshifts/core';
 import { z } from 'zod';
 import { validator } from 'hono/validator';
@@ -28,51 +28,64 @@ app.post('/assign', validator('json', (value, c) => {
   }
   return parsed.data;
 }), async (c) => {
+  const user = c.get('user');
   const { shiftId, employeeId, roleId } = c.req.valid('json');
 
-  // Check if shift exists
-  const shift = DEMO_SHIFTS.find((s) => s.id === shiftId);
+  // Check if shift exists and belongs to user's org
+  const shift = db.query("SELECT * FROM shifts WHERE id = ? AND org_id = ?").get(shiftId, user.orgId) as any;
   if (!shift) {
     return c.json({ error: 'Shift not found' }, 404);
   }
 
   // Check for existing assignment
-  const existingIndex = DEMO_ASSIGNMENTS.findIndex((a) => a.shiftId === shiftId);
-  
-  // Simple overlap check (warning only for now as per plan)
-  // "If an employee already has a shift overlapping in time, return a warning flag"
-  // For MVP POC, we'll just allow it but maybe log it or return a warning property.
-  // We'll implement the overlap check logic later or if requested.
+  const existing = db.query("SELECT * FROM assignments WHERE shift_id = ?").get(shiftId) as any;
 
-  const newAssignment: ShiftAssignment = {
-    id: `assign-${Date.now()}`,
-    shiftId,
-    employeeId,
-    roleId,
-  };
+  let assignment: ShiftAssignment;
 
-  if (existingIndex >= 0) {
-    // Replace existing assignment
-    DEMO_ASSIGNMENTS[existingIndex] = newAssignment;
+  if (existing) {
+    // Update existing assignment
+    db.query("UPDATE assignments SET employee_id = ?, role_id = ? WHERE id = ?").run(
+      employeeId, roleId || null, existing.id
+    );
+    assignment = {
+      id: existing.id,
+      shiftId,
+      employeeId,
+      roleId,
+    };
   } else {
-    DEMO_ASSIGNMENTS.push(newAssignment);
+    // Create new assignment
+    const newId = `assign-${Date.now()}`;
+    db.query("INSERT INTO assignments (id, shift_id, employee_id, role_id) VALUES (?, ?, ?, ?)").run(
+      newId, shiftId, employeeId, roleId || null
+    );
+    assignment = {
+      id: newId,
+      shiftId,
+      employeeId,
+      roleId,
+    };
   }
 
-  return c.json(newAssignment);
+  return c.json(assignment);
 });
 
 app.post('/unassign', validator('json', (value, c) => {
-    const schema = z.object({ shiftId: z.string() });
-    const parsed = schema.safeParse(value);
-    if (!parsed.success) return c.json(parsed.error, 400);
-    return parsed.data;
+  const schema = z.object({ shiftId: z.string() });
+  const parsed = schema.safeParse(value);
+  if (!parsed.success) return c.json(parsed.error, 400);
+  return parsed.data;
 }), (c) => {
+  const user = c.get('user');
   const { shiftId } = c.req.valid('json');
-  
-  const index = DEMO_ASSIGNMENTS.findIndex((a) => a.shiftId === shiftId);
-  if (index !== -1) {
-    DEMO_ASSIGNMENTS.splice(index, 1);
+
+  // Verify shift belongs to user's org before deleting assignment
+  const shift = db.query("SELECT * FROM shifts WHERE id = ? AND org_id = ?").get(shiftId, user.orgId) as any;
+  if (!shift) {
+    return c.json({ error: 'Shift not found' }, 404);
   }
+
+  db.query("DELETE FROM assignments WHERE shift_id = ?").run(shiftId);
 
   return c.json({ success: true });
 });

@@ -32,7 +32,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               QwikShifts
             </h1>
           </div>
-          {user && (
+          {user && user.name && (
             <div className="mt-4 p-3 rounded-lg bg-secondary/50 border border-border/50 flex items-center gap-3">
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
                 {user.name.charAt(0)}

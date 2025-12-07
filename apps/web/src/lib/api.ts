@@ -16,17 +16,17 @@ export type DashboardStats = {
 
 const API_URL = 'http://localhost:3000/api';
 
-let currentUserId = localStorage.getItem('demo-user-id') || 'user-manager';
+let currentUserId = localStorage.getItem('qwikshifts-user-id') || 'user-manager';
 
 const getHeaders = () => ({
   'Content-Type': 'application/json',
-  'x-demo-user-id': currentUserId,
+  'x-user-id': currentUserId,
 });
 
 export const api = {
   setUserId: (id: string, reload = true) => {
     currentUserId = id;
-    localStorage.setItem('demo-user-id', id);
+    localStorage.setItem('qwikshifts-user-id', id);
     if (reload) window.location.reload();
   },
 
@@ -37,6 +37,9 @@ export const api = {
 
   getMe: async (): Promise<User> => {
     const res = await fetch(`${API_URL}/auth/me`, { headers: getHeaders() });
+    if (!res.ok) {
+      throw new Error('Unauthorized');
+    }
     return res.json();
   },
 
@@ -275,7 +278,7 @@ export const api = {
     const params = new URLSearchParams();
     if (areaId) params.append('areaId', areaId);
     if (locationId) params.append('locationId', locationId);
-    
+
     const res = await fetch(`${API_URL}/requirements?${params}`, { headers: getHeaders() });
     return res.json();
   },
