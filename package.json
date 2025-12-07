@@ -1,0 +1,19 @@
+{
+  "name": "qwikshifts-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "bun install && bun run build",
+    "dev": "bun run --filter '*' dev",
+    "start": "bun run --filter '*' start",
+    "build": "bun run --filter '*' build",
+    "db:reset": "bun run --filter api db:reset"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.0"
+  }
+}
