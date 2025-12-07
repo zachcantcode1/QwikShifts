@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { DEMO_SHIFTS, DEMO_ASSIGNMENTS, DEMO_EMPLOYEES } from '../data';
-import { ShiftWithAssignment, User } from '@qwikshifts/core';
+import type { ShiftWithAssignment, User } from '@qwikshifts/core';
 
 type Env = {
   Variables: {

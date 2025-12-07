@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import db from '../db';
-import { Area, User } from '@qwikshifts/core';
+import type { Area, User } from '@qwikshifts/core';
 
 type Env = {
   Variables: {

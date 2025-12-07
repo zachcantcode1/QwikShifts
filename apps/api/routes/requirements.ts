@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import db from '../db';
-import { StaffingRequirement, User } from '@qwikshifts/core';
+import type { StaffingRequirement, User } from '@qwikshifts/core';
 
 type Env = {
   Variables: {

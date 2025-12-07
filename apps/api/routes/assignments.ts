@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { DEMO_ASSIGNMENTS, DEMO_SHIFTS } from '../data';
-import { ShiftAssignment, User } from '@qwikshifts/core';
+import type { ShiftAssignment, User } from '@qwikshifts/core';
 import { z } from 'zod';
 import { validator } from 'hono/validator';
 import { managerMiddleware } from '../middleware';

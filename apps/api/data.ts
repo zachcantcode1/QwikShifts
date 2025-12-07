@@ -1,4 +1,4 @@
-import { User, Organization, EmployeeProfile, Role, Area, Location } from '@qwikshifts/core';
+import type { User, Organization, EmployeeProfile, Role, Area, Location } from '@qwikshifts/core';
 
 export const DEMO_ORG: Organization = {
   id: 'org-1',
@@ -74,7 +74,7 @@ export const DEMO_EMPLOYEES: EmployeeProfile[] = [
   },
 ];
 
-import { Shift, ShiftAssignment, Rule, StaffingRequirement } from '@qwikshifts/core';
+import type { Shift, ShiftAssignment, Rule, StaffingRequirement } from '@qwikshifts/core';
 
 export const DEMO_RULES: Rule[] = [
   {
@@ -109,6 +109,6 @@ export const DEMO_ASSIGNMENTS: ShiftAssignment[] = [];
 
 export const DEMO_REQUIREMENTS: StaffingRequirement[] = [];
 
-import { TimeOffRequest } from '@qwikshifts/core';
+import type { TimeOffRequest } from '@qwikshifts/core';
 
 export const DEMO_TIME_OFF_REQUESTS: TimeOffRequest[] = [];

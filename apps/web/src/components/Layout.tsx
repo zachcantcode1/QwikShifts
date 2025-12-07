@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { Calendar, User, Users, Settings, Clock, Inbox, Sun, Moon, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
-import { api } from '@/lib/api';
 import { useTheme } from './ThemeProvider';
 
 export function Layout({ children }: { children: React.ReactNode }) {

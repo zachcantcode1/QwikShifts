@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import { User } from '@qwikshifts/core';
+import db from '../db';
+import type { User } from '@qwikshifts/core';
 import { 
-  DEMO_TIME_OFF_REQUESTS, 
   DEMO_EMPLOYEES, 
   DEMO_ASSIGNMENTS, 
   DEMO_SHIFTS,
@@ -21,9 +21,8 @@ app.get('/stats', (c) => {
   const user = c.get('user');
   
   // 1. Pending Time Off Requests
-  const pendingTimeOffCount = DEMO_TIME_OFF_REQUESTS.filter(
-    req => req.status === 'pending'
-  ).length;
+  const pendingRequests = db.query("SELECT COUNT(*) as count FROM time_off_requests WHERE status = 'pending' AND org_id = ?").get(user.orgId) as any;
+  const pendingTimeOffCount = pendingRequests.count;
 
   // 2. Overtime Risk
   // Calculate hours for current week for each employee

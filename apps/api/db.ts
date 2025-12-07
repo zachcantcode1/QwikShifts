@@ -152,6 +152,23 @@ export function initDb() {
       FOREIGN KEY(location_id) REFERENCES locations(id) ON DELETE CASCADE
     );
   `);
+
+  // Time Off Requests
+  db.run(`
+    CREATE TABLE IF NOT EXISTS time_off_requests (
+      id TEXT PRIMARY KEY,
+      employee_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      is_full_day BOOLEAN NOT NULL,
+      start_time TEXT,
+      end_time TEXT,
+      reason TEXT NOT NULL,
+      status TEXT NOT NULL,
+      org_id TEXT NOT NULL,
+      FOREIGN KEY(employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+      FOREIGN KEY(org_id) REFERENCES organizations(id)
+    );
+  `);
 }
 
 export default db;

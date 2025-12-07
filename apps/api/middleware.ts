@@ -1,6 +1,6 @@
 import { createMiddleware } from 'hono/factory';
 import db from './db';
-import { User } from '@qwikshifts/core';
+import type { User } from '@qwikshifts/core';
 
 type Env = {
   Variables: {
