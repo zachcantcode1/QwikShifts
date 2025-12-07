@@ -12,6 +12,7 @@
       "name": "api",
       "dependencies": {
         "@qwikshifts/core": "workspace:*",
+        "date-fns": "^4.1.0",
         "hono": "^4.10.7",
         "zod": "^4.1.13",
       },

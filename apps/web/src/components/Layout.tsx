@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, User, Users, Settings, Clock, Inbox, Sun, Moon } from 'lucide-react';
+import { Calendar, User, Users, Settings, Clock, Inbox, Sun, Moon, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -11,7 +11,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
 
   const navItems = [
-    { href: '/', label: 'Schedule', icon: Calendar, roles: ['manager'] },
+    { href: '/', label: 'Dashboard', icon: LayoutGrid, roles: ['manager'] },
+    { href: '/schedule', label: 'Schedule', icon: Calendar, roles: ['manager'] },
     { href: '/my-schedule', label: 'My Schedule', icon: User, roles: ['manager', 'employee'] },
     { href: '/time-off', label: 'Time Off', icon: Clock, roles: ['manager', 'employee'] },
     { href: '/time-off-requests', label: 'Requests', icon: Inbox, roles: ['manager'] },
@@ -79,23 +80,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          <div className="space-y-1">
-            <div className="text-xs font-semibold text-muted-foreground px-4 mb-2 uppercase tracking-wider">Demo</div>
-            <button 
-              onClick={() => api.setUserId('user-manager')}
-              className="flex items-center gap-3 px-4 py-2 w-full text-left hover:bg-secondary rounded-lg transition-colors text-sm text-muted-foreground hover:text-foreground"
-            >
-              <Users size={18} />
-              <span>Switch to Manager</span>
-            </button>
-            <button 
-              onClick={() => api.setUserId('user-employee')}
-              className="flex items-center gap-3 px-4 py-2 w-full text-left hover:bg-secondary rounded-lg transition-colors text-sm text-muted-foreground hover:text-foreground"
-            >
-              <Users size={18} />
-              <span>Switch to Employee</span>
-            </button>
-          </div>
+
         </div>
       </aside>
 

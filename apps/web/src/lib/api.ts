@@ -1,5 +1,19 @@
 import type { ShiftWithAssignment, EmployeeWithRoles, Area, User, Role, StaffingRequirement, TimeOffRequest, TimeOffRequestWithEmployee, Location } from '@qwikshifts/core';
 
+export type DashboardStats = {
+  pendingTimeOffCount: number;
+  overtimeRisks: {
+    employeeId: string;
+    name: string;
+    currentHours: number;
+    limit: number;
+  }[];
+  todaysStats: {
+    totalShifts: number;
+    unassignedShifts: number;
+  };
+};
+
 const API_URL = 'http://localhost:3000/api';
 
 let currentUserId = localStorage.getItem('demo-user-id') || 'user-manager';
@@ -14,6 +28,11 @@ export const api = {
     currentUserId = id;
     localStorage.setItem('demo-user-id', id);
     if (reload) window.location.reload();
+  },
+
+  getDashboardStats: async (): Promise<DashboardStats> => {
+    const res = await fetch(`${API_URL}/dashboard/stats`, { headers: getHeaders() });
+    return res.json();
   },
 
   getMe: async (): Promise<User> => {

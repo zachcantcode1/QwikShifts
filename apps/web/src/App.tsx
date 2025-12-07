@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
+import Dashboard from '@/pages/Dashboard';
 import { ScheduleBoard } from '@/pages/ScheduleBoard';
 import { MySchedule } from '@/pages/MySchedule';
 import { TimeOff } from '@/pages/TimeOff';
@@ -45,7 +46,8 @@ function AppContent() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<ScheduleBoard />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/schedule" element={<ScheduleBoard />} />
         <Route path="/my-schedule" element={<MySchedule />} />
         <Route path="/time-off" element={<TimeOff />} />
         <Route path="/time-off-requests" element={<TimeOffRequests />} />

@@ -13,6 +13,7 @@ import requirements from './routes/requirements'
 import timeoff from './routes/timeoff'
 import locations from './routes/locations'
 import onboarding from './routes/onboarding'
+import dashboard from './routes/dashboard'
 
 type Env = {
   Variables: {
@@ -48,6 +49,7 @@ app.route('/api/employees', employees)
 app.route('/api/schedule', schedule)
 app.route('/api/assignment', assignments)
 app.route('/api/rules', rules)
+app.route('/api/dashboard', dashboard)
 app.route('/api/roles', roles)
 app.route('/api/requirements', requirements)
 app.route('/api/timeoff', timeoff)

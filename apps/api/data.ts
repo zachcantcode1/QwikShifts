@@ -17,7 +17,6 @@ export const DEMO_ROLES: Role[] = [
 ];
 
 export const DEMO_AREAS: Area[] = [
-  { id: 'area-1', name: 'Main Room', color: 'blue', orgId: DEMO_ORG.id, locationId: 'loc-1' },
   { id: 'area-2', name: 'Patio', color: 'green', orgId: DEMO_ORG.id, locationId: 'loc-1' },
   { id: 'area-3', name: 'Kitchen', color: 'red', orgId: DEMO_ORG.id, locationId: 'loc-1' },
   { id: 'area-4', name: 'Deck', color: 'orange', orgId: DEMO_ORG.id, locationId: 'loc-2' },
@@ -95,24 +94,6 @@ export const DEMO_RULES: Rule[] = [
 ];
 
 export const DEMO_SHIFTS: Shift[] = [
-  {
-    id: 'shift-1',
-    areaId: 'area-1',
-    date: '2025-12-06',
-    startTime: '09:00',
-    endTime: '17:00',
-    orgId: DEMO_ORG.id,
-    locationId: 'loc-1',
-  },
-  {
-    id: 'shift-2',
-    areaId: 'area-1',
-    date: '2025-12-07',
-    startTime: '09:00',
-    endTime: '17:00',
-    orgId: DEMO_ORG.id,
-    locationId: 'loc-1',
-  },
    {
     id: 'shift-3',
     areaId: 'area-2',
@@ -124,27 +105,10 @@ export const DEMO_SHIFTS: Shift[] = [
   },
 ];
 
-export const DEMO_ASSIGNMENTS: ShiftAssignment[] = [
-  {
-    id: 'assign-1',
-    shiftId: 'shift-1',
-    employeeId: 'emp-1',
-  },
-];
+export const DEMO_ASSIGNMENTS: ShiftAssignment[] = [];
 
 export const DEMO_REQUIREMENTS: StaffingRequirement[] = [];
 
 import { TimeOffRequest } from '@qwikshifts/core';
 
-export const DEMO_TIME_OFF_REQUESTS: TimeOffRequest[] = [
-  {
-    id: 'req-1',
-    employeeId: 'emp-1',
-    date: '2025-12-10',
-    isFullDay: true,
-    reason: 'Doctor appointment',
-    status: 'pending',
-    orgId: 'org-1',
-  },
-];
-
+export const DEMO_TIME_OFF_REQUESTS: TimeOffRequest[] = [];

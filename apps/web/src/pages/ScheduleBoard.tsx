@@ -14,7 +14,7 @@ import { DayView } from '@/components/schedule/DayView';
 import { AreaHourlyView } from '@/components/schedule/AreaHourlyView';
 import { RoleSelectionModal } from '@/components/RoleSelectionModal';
 import { useAuth } from '@/lib/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const calculateDuration = (start: string, end: string) => {
   const [startH, startM] = start.split(':').map(Number);
@@ -25,6 +25,7 @@ const calculateDuration = (start: string, end: string) => {
 export function ScheduleBoard() {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>('');
   const [areas, setAreas] = useState<Area[]>([]);
@@ -34,7 +35,9 @@ export function ScheduleBoard() {
   const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequestWithEmployee[]>([]);
   const [activeEmployee, setActiveEmployee] = useState<EmployeeWithRoles | null>(null);
   const [selectedAreaId, setSelectedAreaId] = useState<string | 'all'>('all');
-  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
+  const viewParam = searchParams.get('view');
+  const initialView = (viewParam === 'month' || viewParam === 'week' || viewParam === 'day') ? viewParam : 'month';
+  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>(initialView);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [roles, setRoles] = useState<Role[]>([]);
   const [hourlyViewAreaId, setHourlyViewAreaId] = useState<string | null>(null);
