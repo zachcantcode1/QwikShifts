@@ -3,8 +3,8 @@ import { defineConfig } from 'drizzle-kit';
 export default defineConfig({
   schema: './schema.ts',
   out: './drizzle',
-  dialect: 'sqlite',
+  dialect: 'postgresql',
   dbCredentials: {
-    url: 'qwikshifts.sqlite',
+    url: process.env.DATABASE_URL || 'postgres://postgres:postgrespassword@localhost:5432/qwikshifts',
   },
 });

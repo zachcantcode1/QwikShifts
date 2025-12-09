@@ -7,6 +7,7 @@ interface AuthContextType {
   isLoading: boolean;
   isOnboarded: boolean;
   login: (email: string) => Promise<void>;
+  register: (email: string, name: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -14,8 +15,9 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   isOnboarded: false,
-  login: async () => {},
-  logout: () => {},
+  login: async () => { },
+  register: async () => { }, // Default value remains a no-op, but type-checked
+  logout: () => { },
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -54,13 +56,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.reload(); // Simple reload to refresh app state
   };
 
+  const register = async (email: string, name: string) => {
+    const { user } = await api.register(email, name);
+    setUser(user);
+    window.location.reload();
+  };
+
   const logout = () => {
     api.logout();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isOnboarded, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, isOnboarded, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

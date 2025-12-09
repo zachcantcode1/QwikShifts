@@ -46,13 +46,30 @@ export const api = {
     return data;
   },
 
+  register: async (email: string, name: string): Promise<{ token: string; user: User }> => {
+    const res = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name }),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Registration failed' }));
+      throw new Error(errorData.error || 'Registration failed');
+    }
+    const data = await res.json();
+    localStorage.setItem('qwikshifts-token', data.token);
+    return data;
+  },
+
   logout: () => {
     localStorage.removeItem('qwikshifts-token');
     window.location.reload();
   },
 
   getDashboardStats: async (): Promise<DashboardStats> => {
-    const res = await fetch(`${API_URL}/dashboard/stats`, { headers: getHeaders() });
+    // Pass local date to handle timezone differences with server
+    const localDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format
+    const res = await fetch(`${API_URL}/dashboard/stats?date=${localDate}`, { headers: getHeaders() });
     return res.json();
   },
 

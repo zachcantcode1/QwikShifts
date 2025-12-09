@@ -1,9 +1,10 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "./schema";
 
-const sqlite = new Database("qwikshifts.sqlite");
-const db = drizzle(sqlite, { schema });
+const connectionString = process.env.DATABASE_URL || "postgres://postgres:postgrespassword@localhost:5432/qwikshifts";
+const client = postgres(connectionString);
+const db = drizzle(client, { schema });
 
 export default db;
 

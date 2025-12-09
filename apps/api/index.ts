@@ -29,6 +29,16 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', message: 'API is running' })
 })
 
+app.get('/', (c) => {
+  return c.json({
+    message: 'Welcome to QwikShifts API',
+    endpoints: {
+      health: '/health',
+      docs: 'This is an API-only service. Please visit the frontend application.'
+    }
+  })
+})
+
 // Public Routes
 app.route('/api/onboarding', onboarding)
 app.route('/api/auth', auth)

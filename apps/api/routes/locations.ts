@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import db from '../db';
-import { locations } from '../schema';
+import { locations, employees } from '../schema';
 import { eq, and } from 'drizzle-orm';
 import type { User } from '@qwikshifts/core';
 
@@ -17,7 +17,7 @@ app.get('/', async (c) => {
   const result = await db.query.locations.findMany({
     where: eq(locations.orgId, user.orgId),
   });
-  
+
   return c.json(result);
 });
 
@@ -31,7 +31,26 @@ app.post('/', async (c) => {
     name,
     orgId: user.orgId,
   }).returning();
-  
+
+  // Check if current user (Manager) has an employee profile
+  if (newLocation) {
+    const existingEmployee = await db.query.employees.findFirst({
+      where: eq(employees.userId, user.id),
+    });
+
+    // If not, create one linked to this location
+    if (!existingEmployee) {
+      await db.insert(employees).values({
+        id: `emp-${Date.now()}`, // different ID from location
+        userId: user.id,
+        orgId: user.orgId,
+        locationId: newLocation.id,
+        weeklyHoursLimit: null,
+        ruleId: null,
+      });
+    }
+  }
+
   return c.json(newLocation);
 });
 
@@ -56,11 +75,11 @@ app.put('/:id', async (c) => {
 app.delete('/:id', async (c) => {
   const user = c.get('user');
   const id = c.req.param('id');
-  
+
   const [deleted] = await db.delete(locations)
     .where(and(eq(locations.id, id), eq(locations.orgId, user.orgId)))
     .returning();
-  
+
   if (!deleted) {
     return c.json({ error: 'Location not found' }, 404);
   }

@@ -1,7 +1,7 @@
-import { sqliteTable, text, integer, primaryKey } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, boolean, primaryKey } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-export const organizations = sqliteTable('organizations', {
+export const organizations = pgTable('organizations', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   onboardingStep: integer('onboarding_step').default(1),
@@ -12,7 +12,7 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   locations: many(locations),
 }));
 
-export const users = sqliteTable('users', {
+export const users = pgTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
@@ -27,7 +27,7 @@ export const usersRelations = relations(users, ({ one }) => ({
   }),
 }));
 
-export const locations = sqliteTable('locations', {
+export const locations = pgTable('locations', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   orgId: text('org_id').notNull().references(() => organizations.id),
@@ -41,7 +41,7 @@ export const locationsRelations = relations(locations, ({ one, many }) => ({
   areas: many(areas),
 }));
 
-export const areas = sqliteTable('areas', {
+export const areas = pgTable('areas', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   color: text('color').notNull(),
@@ -56,14 +56,14 @@ export const areasRelations = relations(areas, ({ one }) => ({
   }),
 }));
 
-export const roles = sqliteTable('roles', {
+export const roles = pgTable('roles', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   color: text('color').notNull(),
   orgId: text('org_id').notNull().references(() => organizations.id),
 });
 
-export const rules = sqliteTable('rules', {
+export const rules = pgTable('rules', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   type: text('type').notNull(),
@@ -71,7 +71,7 @@ export const rules = sqliteTable('rules', {
   orgId: text('org_id').notNull().references(() => organizations.id),
 });
 
-export const employees = sqliteTable('employees', {
+export const employees = pgTable('employees', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),
   orgId: text('org_id').notNull().references(() => organizations.id),
@@ -92,7 +92,7 @@ export const employeesRelations = relations(employees, ({ one, many }) => ({
   employeeRoles: many(employeeRoles),
 }));
 
-export const employeeRoles = sqliteTable('employee_roles', {
+export const employeeRoles = pgTable('employee_roles', {
   employeeId: text('employee_id').notNull().references(() => employees.id, { onDelete: 'cascade' }),
   roleId: text('role_id').notNull().references(() => roles.id, { onDelete: 'cascade' }),
 }, (t) => ({
@@ -110,7 +110,7 @@ export const employeeRolesRelations = relations(employeeRoles, ({ one }) => ({
   }),
 }));
 
-export const shifts = sqliteTable('shifts', {
+export const shifts = pgTable('shifts', {
   id: text('id').primaryKey(),
   areaId: text('area_id').notNull().references(() => areas.id, { onDelete: 'cascade' }),
   date: text('date').notNull(),
@@ -128,7 +128,7 @@ export const shiftsRelations = relations(shifts, ({ one, many }) => ({
   assignment: one(assignments), // Shift has one assignment (in this model?)
 }));
 
-export const assignments = sqliteTable('assignments', {
+export const assignments = pgTable('assignments', {
   id: text('id').primaryKey(),
   shiftId: text('shift_id').notNull().references(() => shifts.id, { onDelete: 'cascade' }),
   employeeId: text('employee_id').notNull().references(() => employees.id, { onDelete: 'cascade' }),
@@ -150,7 +150,7 @@ export const assignmentsRelations = relations(assignments, ({ one }) => ({
   }),
 }));
 
-export const requirements = sqliteTable('requirements', {
+export const requirements = pgTable('requirements', {
   id: text('id').primaryKey(),
   areaId: text('area_id').notNull().references(() => areas.id, { onDelete: 'cascade' }),
   dayOfWeek: text('day_of_week').notNull(),
@@ -160,11 +160,11 @@ export const requirements = sqliteTable('requirements', {
   locationId: text('location_id').notNull().references(() => locations.id, { onDelete: 'cascade' }),
 });
 
-export const timeOffRequests = sqliteTable('time_off_requests', {
+export const timeOffRequests = pgTable('time_off_requests', {
   id: text('id').primaryKey(),
   employeeId: text('employee_id').notNull().references(() => employees.id, { onDelete: 'cascade' }),
   date: text('date').notNull(),
-  isFullDay: integer('is_full_day', { mode: 'boolean' }).notNull(),
+  isFullDay: boolean('is_full_day').notNull(),
   startTime: text('start_time'),
   endTime: text('end_time'),
   reason: text('reason').notNull(),

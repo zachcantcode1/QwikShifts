@@ -6,7 +6,9 @@
     "dev": "bun run --watch index.ts",
     "start": "bun run index.ts",
     "build": "echo 'No build needed for Bun API'",
-    "db:reset": "rm -f qwikshifts.sqlite* && echo 'Database reset complete'"
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:generate": "drizzle-kit generate"
   },
   "private": true,
   "devDependencies": {
@@ -21,6 +23,7 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.0",
     "hono": "^4.10.7",
+    "postgres": "^3.4.7",
     "zod": "^4.1.13"
   }
 }

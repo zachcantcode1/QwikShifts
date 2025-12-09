@@ -29,7 +29,7 @@ app.post('/progress', async (c) => {
 
 app.post('/setup', async (c) => {
   const { orgName, managerName, managerEmail } = await c.req.json();
-  
+
   // Check if user already exists
   const existingUser = await db.query.users.findFirst({
     where: eq(users.email, managerEmail),
@@ -38,12 +38,12 @@ app.post('/setup', async (c) => {
   if (existingUser) {
     return c.json({ error: 'A user with this email already exists.' }, 400);
   }
-  
+
   const orgId = `org-${Date.now()}`;
   const userId = `user-${Date.now()}`;
   const locationId = `loc-${Date.now()}`;
   const employeeId = `emp-${Date.now()}`;
-  
+
   try {
     await db.transaction(async (tx) => {
       await tx.insert(organizations).values({
@@ -60,22 +60,8 @@ app.post('/setup', async (c) => {
         orgId: orgId,
       });
 
-      // Create default location
-      await tx.insert(locations).values({
-        id: locationId,
-        name: "Main Location",
-        orgId: orgId,
-      });
-
-      // Create employee profile for manager
-      await tx.insert(employees).values({
-        id: employeeId,
-        userId: userId,
-        orgId: orgId,
-        locationId: locationId,
-        weeklyHoursLimit: null,
-        ruleId: null,
-      });
+      // NO default location or employee created here. 
+      // Manager will be assigned to the first location they create in the next step.
     });
 
     // Generate token
@@ -86,19 +72,19 @@ app.post('/setup', async (c) => {
       orgId: orgId,
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
     };
-  
+
     const token = await sign(payload, JWT_SECRET);
-    
-    return c.json({ 
-      success: true, 
+
+    return c.json({
+      success: true,
       token,
-      user: { 
-        id: userId, 
-        name: managerName, 
-        email: managerEmail, 
-        role: 'manager', 
-        orgId 
-      } 
+      user: {
+        id: userId,
+        name: managerName,
+        email: managerEmail,
+        role: 'manager',
+        orgId
+      }
     });
   } catch (error: any) {
     console.error(error);

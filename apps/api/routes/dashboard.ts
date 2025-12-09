@@ -23,12 +23,23 @@ app.get('/stats', async (c) => {
       eq(timeOffRequests.status, 'pending'),
       eq(timeOffRequests.orgId, user.orgId)
     ));
-  
+
   const pendingTimeOffCount = pendingRequests?.count || 0;
 
   // 2. Overtime Risk
   // Calculate hours for current week for each employee
-  const now = new Date();
+  // Allow client to specify "today" (to handle timezones)
+  const dateParam = c.req.query('date');
+  let now = new Date();
+
+  if (dateParam) {
+    // Treat the passed date string (YYYY-MM-DD) as the local "now"
+    // We append T12:00:00 to ensure we are safely in the middle of that day 
+    // when using date-fns functions that might be sensitive to boundaries,
+    // though startOfWeek/endOfWeek usually handle dates fine.
+    now = parseISO(`${dateParam}T12:00:00`);
+  }
+
   const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday start
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
   const weekStartStr = format(weekStart, 'yyyy-MM-dd');
@@ -50,13 +61,13 @@ app.get('/stats', async (c) => {
 
   // Get all shifts assigned in the current week
   const weekShifts = await db.select({
-      date: shifts.date,
-      startTime: shifts.startTime,
-      endTime: shifts.endTime,
-      areaId: shifts.areaId,
-      employeeId: assignments.employeeId,
-      roleId: assignments.roleId,
-    })
+    date: shifts.date,
+    startTime: shifts.startTime,
+    endTime: shifts.endTime,
+    areaId: shifts.areaId,
+    employeeId: assignments.employeeId,
+    roleId: assignments.roleId,
+  })
     .from(shifts)
     .innerJoin(assignments, eq(shifts.id, assignments.shiftId))
     .where(and(
@@ -103,22 +114,22 @@ app.get('/stats', async (c) => {
       eq(shifts.orgId, user.orgId),
       eq(shifts.date, todayStr)
     ));
-    
+
   const totalShiftsToday = todaysShifts.length;
 
   let unassignedShiftsToday = 0;
-  
+
   if (totalShiftsToday > 0) {
     const todaysShiftsWithAssignments = await db.select({
       id: shifts.id,
       assignmentId: assignments.id,
     })
-    .from(shifts)
-    .leftJoin(assignments, eq(shifts.id, assignments.shiftId))
-    .where(and(
-      eq(shifts.orgId, user.orgId),
-      eq(shifts.date, todayStr)
-    ));
+      .from(shifts)
+      .leftJoin(assignments, eq(shifts.id, assignments.shiftId))
+      .where(and(
+        eq(shifts.orgId, user.orgId),
+        eq(shifts.date, todayStr)
+      ));
 
     unassignedShiftsToday = todaysShiftsWithAssignments.filter(s => !s.assignmentId).length;
   }
@@ -129,26 +140,26 @@ app.get('/stats', async (c) => {
   });
 
   const weeklyRequirements = [];
-  
+
   for (let i = 0; i < 7; i++) {
     const currentDay = addDays(weekStart, i);
     const dateStr = format(currentDay, 'yyyy-MM-dd');
     const dayName = format(currentDay, 'eeee').toLowerCase(); // 'monday', 'tuesday', etc.
 
     const dayRequirements = allRequirements.filter(r => r.dayOfWeek === dayName);
-    
+
     let totalRequired = 0;
     let missing = 0;
 
     for (const req of dayRequirements) {
       totalRequired += req.count;
-      
+
       // Count shifts matching area and role on this day
       // Note: assignment roleId is optional, but requirements are for a specific role.
       // We check if the assignment has the specific role.
-      const coveredCount = weekShifts.filter(s => 
-        s.date === dateStr && 
-        s.areaId === req.areaId && 
+      const coveredCount = weekShifts.filter(s =>
+        s.date === dateStr &&
+        s.areaId === req.areaId &&
         s.roleId === req.roleId
       ).length;
 
